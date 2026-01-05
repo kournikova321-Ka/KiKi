@@ -3,165 +3,329 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>KiKi 聯名專案 - 完整效能工具</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <title>KIKI x INFOLAB | Digital Editorial Tool</title>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@900&family=Playfair+Display:ital,wght@1,900&family=Noto+Sans+TC:wght@700;900&display=swap" rel="stylesheet">
-    <style>
-        :root { --fudge-orange: #FF6D00; --fudge-dark: #2D241E; --fudge-white: #FDFCFB; }
-        body { font-family: 'Noto Sans TC', sans-serif; background-color: var(--fudge-white); color: var(--fudge-dark); }
-        .serif { font-family: 'Playfair Display', serif; }
-        .fudge-border { border: 4px solid var(--fudge-dark); }
-        .shadow-orange { box-shadow: 8px 8px 0px var(--fudge-orange); }
-        .tag { background: var(--fudge-orange); color: white; padding: 4px 12px; font-weight: 900; font-size: 10px; border: 2px solid var(--fudge-dark); }
-        .input-fudge { background: white; border: 2px solid var(--fudge-dark); padding: 10px; font-weight: 900; outline: none; }
-        .animate-fade { animation: fadeIn 0.4s ease-out; }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,900;1,900&family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
+
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .font-magazine-serif { font-family: 'Playfair Display', serif; }
+            .font-magazine-sans { font-family: 'Inter', sans-serif; }
+            .aspect-magazine { aspect-ratio: 3 / 4; }
+            .fudge-border-dark { border: 3px solid #2D241E; }
+            .shadow-orange { box-shadow: 6px 6px 0px 0px #FF6D00; }
+            .animate-fade-in { animation: fadeIn 0.4s ease-out forwards; }
+            @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        }
+        body { background-color: #FDFCFB; }
+        ::-webkit-scrollbar { display: none; }
     </style>
 </head>
 <body>
     <div id="root"></div>
 
     <script type="text/babel">
-        const { useState, useMemo, useEffect } = React;
+        const { useState, useEffect, useMemo } = React;
+
+        // --- 全部的 SVG Icons (完全對應原本的 Heroicons) ---
+        const Icon = ({ name, className = "w-6 h-6" }) => {
+            const paths = {
+                plus: <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />,
+                bag: <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 10.5V6a3.75 3.75 0 10-7.5 0v4.5m11.356-1.993l1.263 12c.07.665-.45 1.243-1.119 1.243H4.25a1.125 1.125 0 01-1.12-1.243l1.264-12A1.125 1.125 0 015.513 7.5h12.974c.576 0 1.059.435 1.119 1.007z" />,
+                clock: <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />,
+                chart: <path strokeLinecap="round" strokeLinejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z" />,
+                camera: <path strokeLinecap="round" strokeLinejoin="round" d="M6.827 6.175A2.31 2.31 0 015.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 002.25 2.25h15a2.25 2.25 0 002.25-2.25V9.574c0-1.067-.75-1.994-1.802-2.169" />,
+                info: <path strokeLinecap="round" strokeLinejoin="round" d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z" />,
+                link: <path strokeLinecap="round" strokeLinejoin="round" d="M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364" />,
+                chevronLeft: <path d="M15.75 19.5L8.25 12l7.5-7.5" />,
+                chevronRight: <path d="M8.25 4.5l7.5 7.5-7.5 7.5" />,
+                trash: <path d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166" />,
+                lock: <path d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />,
+                trophy: <path d="M11.48 3.499a.562.562 0 011.04 0l2.125 5.111a.563.563 0 00.475.345" />,
+                envelope: <path d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75" />,
+                chat: <path d="M7.5 8.25h9m-9 3H12m-9.75 1.51c0 1.6 1.123 2.994 2.707 3.227 1.129.166 2.27.293 3.423.379" />,
+                arrowTrendingUp: <path d="M2.25 18L9 11.25l4.5 4.5L21.75 7.5" />,
+                arrowUpTray: <path d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />,
+                xMark: <path d="M6 18L18 6M6 6l12 12" />
+            };
+            return (
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className={className}>
+                    {paths[name] || <circle cx="12" cy="12" r="10" />}
+                </svg>
+            );
+        };
+
+        // --- 初始資料集 ---
+        const DEFAULT_10_DAY_PLANS = [
+            { id: '1', dayNumber: 1, date: '01/15', title: '聯名正式預告', strategy: '發布聯名主視覺，強調「首度合作」與「質感日常」。', storyGoal: 3, postGoal: 1, dailySales: 0 },
+            { id: '2', dayNumber: 2, date: '01/16', title: '全系列 Lookbook', strategy: '輪播展示所有款式、尺寸與顏色。', storyGoal: 5, postGoal: 1, dailySales: 0 },
+            { id: '3', dayNumber: 3, date: '01/17', title: 'KiKi 的穿搭教室 A', strategy: '針對上衣款式進行實穿教學，分享配色技巧。', storyGoal: 4, postGoal: 2, dailySales: 0 },
+            { id: '4', dayNumber: 4, date: '01/18', title: '細節與材質揭密', strategy: '微距拍攝布料與車工，展現高質感價值。', storyGoal: 3, postGoal: 1, dailySales: 0 },
+            { id: '5', dayNumber: 5, date: '01/19', title: 'QA 尺寸與版型', strategy: '回覆尺寸疑問，直播展示動態垂墜感。', storyGoal: 5, postGoal: 1, dailySales: 0 },
+            { id: '6', dayNumber: 6, date: '01/20', title: '開賣倒數 24H', strategy: '設定倒數貼紙，分享購買攻略（如免運）。', storyGoal: 5, postGoal: 3, dailySales: 0 },
+            { id: '7', dayNumber: 7, date: '01/21', title: '正式開賣 00:00', strategy: '轉發首批購買截圖，分享庫存吃緊訊息。', storyGoal: 5, postGoal: 5, dailySales: 0 },
+            { id: '8', dayNumber: 8, date: '01/22', title: '穿搭教室 B', strategy: '針對下身與配件做混搭示範，延續熱度。', storyGoal: 5, postGoal: 2, dailySales: 0 },
+            { id: '9', dayNumber: 9, date: '01/23', title: '最後現貨追蹤', strategy: '標示「剩餘少數」，營造完售絕版感。', storyGoal: 4, postGoal: 1, dailySales: 0 },
+            { id: '10', dayNumber: 10, date: '01/24', title: '完售感謝與回饋', strategy: '感謝大家支持，分享期待下回合作的心情。', storyGoal: 3, postGoal: 1, dailySales: 0 }
+        ];
+
+        const INITIAL_PRODUCTS = [
+            { id: '1', name: 'Oversized Poplin Shirt', colors: 'Off-White / Mocha / Navy', sizes: 'S, M, L', description: 'Premium Japanese poplin for casual elegant silhouette.', imageUrl: '', link: 'https://www.infolabtw.com/' },
+            { id: '2', name: 'Vintage Wool Blend Vest', colors: 'Camel / Charcoal / Ivory', sizes: 'F', description: 'Timeless layering piece with warm texture.', imageUrl: '', link: 'https://www.infolabtw.com/' },
+            { id: '3', name: 'Pleated Wide Trousers', colors: 'Brown / Sand / Black', sizes: 'S, M, L', description: 'Structured yet flowing wide-leg trousers.', imageUrl: '', link: 'https://www.infolabtw.com/' },
+        ];
+
+        const GOAL_OPTIONS = [1, 2, 3, 4, 5];
 
         const App = () => {
-            const [isLocked, setIsLocked] = useState(true);
-            const [password, setPassword] = useState('');
+            const [isAuthorized, setIsAuthorized] = useState(() => localStorage.getItem('kiki_auth') === 'true');
+            const [passwordInput, setPasswordInput] = useState('');
+            const [showError, setShowError] = useState(false);
             const [activeTab, setActiveTab] = useState('plan');
+            const [activeCarouselIndex, setActiveCarouselIndex] = useState(0);
 
-            // --- 資料狀態與自動儲存 ---
-            const [plans, setPlans] = useState(() => {
-                const saved = localStorage.getItem('kiki_plans');
-                return saved ? JSON.parse(saved) : [
-                    { id: '1', dayNumber: 1, date: '01/15', title: '聯名正式預告', strategy: '發布聯名主視覺，強調「首度合作」與「質感日常」。', storyGoal: 3, postGoal: 1, dailySales: 0 },
-                    { id: '6', dayNumber: 6, date: '01/20', title: '開賣倒數 24H', strategy: '設定倒數貼紙，分享購買攻略。', storyGoal: 5, postGoal: 3, dailySales: 0 },
-                    { id: '7', dayNumber: 7, date: '01/21', title: '正式開賣 00:00', strategy: '轉發購買截圖，分享庫存資訊。', storyGoal: 5, postGoal: 5, dailySales: 0 }
-                ];
-            });
-
-            const [targetGoal, setTargetGoal] = useState(() => Number(localStorage.getItem('kiki_target')) || 500000);
-            const [heroImage, setHeroImage] = useState(() => localStorage.getItem('kiki_hero') || '');
+            const [targetGoal, setTargetGoal] = useState(() => Number(localStorage.getItem('kiki_target_v5')) || 500000);
+            const [products, setProducts] = useState(() => JSON.parse(localStorage.getItem('kiki_products_v5')) || INITIAL_PRODUCTS);
+            const [plans, setPlans] = useState(() => JSON.parse(localStorage.getItem('kiki_plans_v5')) || DEFAULT_10_DAY_PLANS);
+            const [carouselImages, setCarouselImages] = useState(() => JSON.parse(localStorage.getItem('kiki_carousel_v5')) || [{id:'1',url:''}]);
+            const [countdownDate, setCountdownDate] = useState(() => localStorage.getItem('kiki_countdown_v5') || '2026-01-15');
 
             useEffect(() => {
-                localStorage.setItem('kiki_plans', JSON.stringify(plans));
-                localStorage.setItem('kiki_target', targetGoal);
-                localStorage.setItem('kiki_hero', heroImage);
-            }, [plans, targetGoal, heroImage]);
+                if (isAuthorized) {
+                    localStorage.setItem('kiki_products_v5', JSON.stringify(products));
+                    localStorage.setItem('kiki_plans_v5', JSON.stringify(plans));
+                    localStorage.setItem('kiki_carousel_v5', JSON.stringify(carouselImages));
+                    localStorage.setItem('kiki_countdown_v5', countdownDate);
+                    localStorage.setItem('kiki_target_v5', targetGoal.toString());
+                }
+            }, [products, plans, carouselImages, countdownDate, targetGoal, isAuthorized]);
 
-            const totalSales = useMemo(() => plans.reduce((acc, p) => acc + (p.dailySales || 0), 0), [plans]);
-            const progress = Math.min(100, (totalSales / targetGoal) * 100);
+            const currentTotalSales = useMemo(() => plans.reduce((acc, plan) => acc + (plan.dailySales || 0), 0), [plans]);
+            const progressPercentage = Math.min(100, (currentTotalSales / targetGoal) * 100);
 
-            // --- 密碼檢查邏輯 ---
-            const handleUnlock = () => {
-                if (password === '2026') { // 您可以自己修改這裡的密碼
-                    setIsLocked(false);
+            const handleLogin = (e) => {
+                e.preventDefault();
+                if (passwordInput === 'KIKI100') {
+                    setIsAuthorized(true);
+                    localStorage.setItem('kiki_auth', 'true');
                 } else {
-                    alert('密碼錯誤！');
+                    setShowError(true);
+                    setPasswordInput('');
                 }
             };
 
-            // --- 圖片上傳邏輯 ---
-            const handleUpload = (e) => {
-                const file = e.target.files[0];
+            const handleImageUpload = (event, type, id) => {
+                const file = event.target.files?.[0];
                 if (file) {
                     const reader = new FileReader();
-                    reader.onload = (ev) => setHeroImage(ev.target.result);
+                    reader.onload = (e) => {
+                        const base64 = e.target?.result;
+                        if (type === 'carousel') {
+                            setCarouselImages(prev => prev.map((img, i) => i === activeCarouselIndex ? {...img, url: base64} : img));
+                        } else if (type === 'product' && id) {
+                            setProducts(prev => prev.map(p => p.id === id ? { ...p, imageUrl: base64 } : p));
+                        } else if (type === 'daily' && id) {
+                            setPlans(prev => prev.map(p => p.id === id ? { ...p, dailyImageUrl: base64 } : p));
+                        }
+                    };
                     reader.readAsDataURL(file);
                 }
             };
 
-            // 1. 密碼鎖定頁面
-            if (isLocked) {
+            const updateProduct = (id, field, value) => setProducts(products.map(p => p.id === id ? { ...p, [field]: value } : p));
+            const updatePlan = (id, field, value) => setPlans(plans.map(p => p.id === id ? { ...p, [field]: value } : p));
+            
+            if (!isAuthorized) {
                 return (
-                    <div className="flex flex-col items-center justify-center min-h-screen bg-[#2D241E] p-6 text-white text-center">
-                        <div className="tag mb-6">RESTRICTED ACCESS</div>
-                        <h2 className="serif text-4xl font-black mb-8 italic">KiKi Project</h2>
-                        <input 
-                            type="password" 
-                            className="input-fudge text-black w-full max-w-xs text-center mb-4" 
-                            placeholder="Enter Password" 
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
-                        />
-                        <button onClick={handleUnlock} className="tag w-full max-w-xs py-4 text-sm active:scale-95 transition-transform">UNLOCK SYSTEM</button>
+                    <div className="max-w-md mx-auto min-h-screen bg-[#FDFCFB] flex items-center justify-center p-8 border-x-4 border-[#2D241E] shadow-2xl">
+                        <div className="w-full bg-white fudge-border-dark p-10 shadow-orange text-center animate-fade-in">
+                            <Icon name="lock" className="w-12 h-12 mx-auto mb-6 text-[#FF6D00]" />
+                            <h2 className="text-3xl font-magazine-serif font-black italic text-[#2D241E] uppercase mb-2">Members Only</h2>
+                            <form onSubmit={handleLogin} className="space-y-6 mt-10">
+                                <input type="password" value={passwordInput} onChange={(e) => setPasswordInput(e.target.value)} placeholder="••••••••" className={`w-full bg-[#FDFCFB] fudge-border-dark px-4 py-4 text-center text-xl font-black focus:ring-2 focus:ring-[#FF6D00] outline-none transition-all ${showError ? 'border-red-500' : ''}`} autoFocus />
+                                <button type="submit" className="w-full bg-[#2D241E] text-white font-black py-4 shadow-orange active:translate-y-1">ACCESS GALLERY</button>
+                            </form>
+                        </div>
                     </div>
                 );
             }
 
-            // 2. 主程式內容
             return (
-                <div className="max-w-md mx-auto min-h-screen bg-[#FDFCFB] pb-48 border-x-4 border-[#2D241E] animate-fade relative shadow-2xl">
-                    <header className="px-6 pt-16 pb-12 text-center border-b-4 border-[#2D241E]">
-                        <div className="tag italic tracking-widest uppercase">INFOLAB x KIKI</div>
-                        <h1 className="text-4xl serif font-black leading-none uppercase mt-4">DIGITAL <br/><span className="text-[#FF6D00] italic font-normal text-3xl">Performance</span></h1>
+                <div className="max-w-md mx-auto min-h-screen bg-[#FDFCFB] pb-48 border-x-4 border-[#2D241E] overflow-x-hidden relative shadow-2xl">
+                    <header className="px-6 pt-16 pb-12 text-center bg-[#FDFCFB] border-b-4 border-[#2D241E]">
+                        <span className="text-[10px] font-magazine-sans font-black tracking-[0.5em] bg-[#FF6D00] text-white px-4 py-1.5 uppercase italic">INFOLAB PROJECT.</span>
+                        <h1 className="text-[44px] font-magazine-serif font-black tracking-tighter text-[#2D241E] mt-4 uppercase">KIKI FIRST <span className="italic font-normal text-4xl mt-1 text-[#FF6D00]">Collaboration</span></h1>
+                        <p className="mt-10 font-black text-[#4E342E] text-xs tracking-widest uppercase">Est. {countdownDate.replace(/-/g, '/')}</p>
                     </header>
 
-                    <main className="p-6">
+                    <main className="px-6">
+                        {/* Tab: Plan */}
                         {activeTab === 'plan' && (
-                            <div className="space-y-10">
-                                {/* 圖片預覽區 */}
-                                <div className="fudge-border h-96 relative bg-stone-100 overflow-hidden shadow-orange">
-                                    {heroImage ? <img src={heroImage} className="w-full h-full object-cover" /> : <div className="flex items-center justify-center h-full text-xs font-black opacity-20 italic">No Image</div>}
-                                    <label className="absolute bottom-4 right-4 bg-white p-3 fudge-border cursor-pointer active:scale-90">
-                                        📷 <input type="file" className="hidden" onChange={handleUpload} />
-                                    </label>
+                            <div className="mt-12 animate-fade-in">
+                                <section className="relative aspect-magazine bg-[#FDFCFB] fudge-border-dark p-2 group shadow-orange mb-16 overflow-hidden">
+                                    <div className="w-full h-full bg-stone-100 flex items-center justify-center overflow-hidden relative">
+                                        {carouselImages[activeCarouselIndex]?.url ? <img src={carouselImages[activeCarouselIndex].url} className="w-full h-full object-cover" /> : <Icon name="camera" className="w-10 h-10 opacity-20" />}
+                                        <div className="absolute bottom-4 right-4 flex flex-col gap-2">
+                                            <label className="cursor-pointer bg-[#FF6D00] text-white p-2 fudge-border-dark shadow-orange"><Icon name="camera" className="w-5 h-5" /><input type="file" className="hidden" onChange={(e) => handleImageUpload(e, 'carousel')} /></label>
+                                            <button onClick={() => setCarouselImages([...carouselImages, { id: Date.now().toString(), url: '' }])} className="bg-[#FDFCFB] p-2 fudge-border-dark shadow-orange"><Icon name="plus" className="w-5 h-5" /></button>
+                                        </div>
+                                        <div className="absolute top-4 left-4 bg-[#2D241E] text-white px-3 py-1 text-[9px] font-black italic">VOL. {activeCarouselIndex + 1}</div>
+                                    </div>
+                                    <button onClick={() => setActiveCarouselIndex(prev => (prev === 0 ? carouselImages.length - 1 : prev - 1))} className="absolute top-1/2 left-0 -translate-x-1/2 bg-[#2D241E] text-white p-3 rounded-full"><Icon name="chevronLeft" className="w-6 h-6" /></button>
+                                    <button onClick={() => setActiveCarouselIndex(prev => (prev === carouselImages.length - 1 ? 0 : prev + 1))} className="absolute top-1/2 right-0 translate-x-1/2 bg-[#2D241E] text-white p-3 rounded-full"><Icon name="chevronRight" className="w-6 h-6" /></button>
+                                </section>
+
+                                <div className="flex justify-between items-end mb-12 border-b-2 border-[#FF6D00] pb-4">
+                                    <h2 className="text-4xl font-magazine-serif font-black italic text-[#2D241E] uppercase">Planner</h2>
+                                    <input type="date" className="text-[10px] font-black p-1 bg-white text-[#FF6D00] fudge-border-dark" value={countdownDate} onChange={(e) => setCountdownDate(e.target.value)} />
                                 </div>
 
-                                <h2 className="text-3xl serif font-black italic border-b-2 border-[#FF6D00] pb-2 uppercase tracking-tighter">Strategic Planner</h2>
-                                {plans.map(p => (
-                                    <div key={p.id} className="card shadow-orange">
-                                        <div className="tag">DAY {p.dayNumber} - {p.date}</div>
-                                        <h3 className="text-xl font-bold mb-2">{p.title}</h3>
-                                        <textarea 
-                                            className="w-full text-sm italic text-stone-500 bg-transparent border-none resize-none focus:ring-0" 
-                                            value={p.strategy} 
-                                            onChange={(e) => setPlans(plans.map(item => item.id === p.id ? {...item, strategy: e.target.value} : item))}
-                                        />
-                                        <div className="flex justify-between items-center mt-4 pt-4 border-t border-stone-100">
-                                            <div className="text-[10px] font-black uppercase text-[#FF6D00]">Target Sales:</div>
-                                            <input 
-                                                type="number" 
-                                                className="w-24 text-right border-b-2 border-[#FF6D00] font-black text-sm" 
-                                                value={p.dailySales} 
-                                                onChange={(e) => setPlans(plans.map(item => item.id === p.id ? {...item, dailySales: Number(e.target.value)} : item))}
-                                            />
+                                <div className="space-y-12 pb-20 relative">
+                                    <div className="absolute left-[20px] top-0 bottom-0 w-[2px] bg-[#4E342E] opacity-10" />
+                                    {plans.map((plan) => (
+                                        <div key={plan.id} className="relative pl-12">
+                                            <div className="absolute left-0 top-0 w-10 h-10 fudge-border-dark bg-[#FF6D00] text-white flex flex-col items-center justify-center z-10 shadow-orange">
+                                                <span className="text-[8px] font-black uppercase">Day</span><span className="text-lg font-black">{plan.dayNumber}</span>
+                                            </div>
+                                            <div className="bg-[#FDFCFB] p-6 fudge-border-dark shadow-orange relative">
+                                                <input className="w-full text-lg font-magazine-serif font-black text-[#2D241E] bg-transparent border-none p-0 italic focus:ring-0 mb-4" value={plan.title} onChange={(e) => updatePlan(plan.id, 'title', e.target.value)} />
+                                                <textarea className="w-full text-[13px] text-stone-500 bg-stone-50/50 border-none p-4 h-24 focus:ring-0 resize-none italic" value={plan.strategy} onChange={(e) => updatePlan(plan.id, 'strategy', e.target.value)} />
+                                                
+                                                <div className="grid grid-cols-2 gap-4 mt-6 pt-4 border-t border-stone-100">
+                                                    <div className="flex flex-col gap-1">
+                                                        <span className="text-[9px] font-black uppercase text-stone-400 tracking-widest">IG Stories</span>
+                                                        <select value={plan.storyGoal} onChange={(e) => updatePlan(plan.id, 'storyGoal', Number(e.target.value))} className="bg-white fudge-border-dark border-[#FF6D00] text-[11px] font-black px-3 py-2 text-[#FF6D00]">
+                                                            {GOAL_OPTIONS.map(opt => <option key={opt} value={opt}>{opt} STORIES</option>)}
+                                                        </select>
+                                                    </div>
+                                                    <div className="flex flex-col gap-1">
+                                                        <span className="text-[9px] font-black uppercase text-stone-400 tracking-widest">IG Post</span>
+                                                        <select value={plan.postGoal || 1} onChange={(e) => updatePlan(plan.id, 'postGoal', Number(e.target.value))} className="bg-white fudge-border-dark border-[#FF6D00] text-[11px] font-black px-3 py-2 text-[#FF6D00]">
+                                                            {GOAL_OPTIONS.map(opt => <option key={opt} value={opt}>{opt} POSTS</option>)}
+                                                        </select>
+                                                    </div>
+                                                </div>
+                                            </div>
                                         </div>
-                                    </div>
-                                ))}
+                                    ))}
+                                </div>
                             </div>
                         )}
 
+                        {/* Tab: Items */}
+                        {activeTab === 'items' && (
+                            <div className="mt-12 animate-fade-in">
+                                <div className="flex justify-between items-baseline mb-12 border-b-2 border-[#FF6D00] pb-4">
+                                    <h2 className="text-5xl font-magazine-serif font-black italic text-[#2D241E] uppercase">Collection</h2>
+                                    <button onClick={() => setProducts([...products, { id: Date.now().toString(), name: 'NEW STYLE', colors: 'Neutral', sizes: 'F', description: 'Brief description.', imageUrl: '', link: 'https://www.infolabtw.com/' }])} className="w-14 h-14 bg-[#FF6D00] text-white flex items-center justify-center shadow-orange fudge-border-dark"><Icon name="plus" className="w-7 h-7"/></button>
+                                </div>
+                                <div className="grid grid-cols-2 gap-x-8 gap-y-16 mb-24">
+                                    {products.map((product) => (
+                                        <div key={product.id} className="group relative">
+                                            <div className="absolute top-2 right-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col gap-1">
+                                                <label className="w-8 h-8 bg-white fudge-border-dark flex items-center justify-center cursor-pointer shadow-orange"><Icon name="camera" className="w-4 h-4"/><input type="file" className="hidden" onChange={(e) => handleImageUpload(e, 'product', product.id)}/></label>
+                                                <button onClick={() => setProducts(products.filter(p => p.id !== product.id))} className="w-8 h-8 bg-red-500 text-white flex items-center justify-center shadow-orange"><Icon name="xMark" className="w-4 h-4"/></button>
+                                            </div>
+                                            <div className="aspect-magazine bg-white fudge-border-dark overflow-hidden mb-5 p-2 shadow-orange">
+                                                {product.imageUrl ? <img src={product.imageUrl} className="w-full h-full object-cover" /> : <Icon name="camera" className="opacity-10 w-6 h-6 m-auto mt-20" />}
+                                            </div>
+                                            <div className="px-1 border-l-4 border-[#FF6D00] space-y-2">
+                                                <input className="block w-full text-[13px] font-black text-[#2D241E] bg-transparent border-none p-0 focus:ring-0 uppercase italic" value={product.name} onChange={(e) => updateProduct(product.id, 'name', e.target.value)} />
+                                                <div className="flex justify-between text-[9px] font-black uppercase text-stone-400"><span>COLOUR</span><input className="w-2/3 text-right bg-transparent border-none p-0 text-[#4E342E] focus:ring-0" value={product.colors} onChange={(e) => updateProduct(product.id, 'colors', e.target.value)} /></div>
+                                                <div className="flex justify-between text-[9px] font-black uppercase text-stone-400"><span>SIZE</span><input className="w-2/3 text-right bg-transparent border-none p-0 text-[#4E342E] focus:ring-0" value={product.sizes} onChange={(e) => updateProduct(product.id, 'sizes', e.target.value)} /></div>
+                                                <textarea className="w-full text-[10px] text-stone-400 bg-transparent border-none p-0 focus:ring-0 resize-none italic leading-relaxed" value={product.description} onChange={(e) => updateProduct(product.id, 'description', e.target.value)} />
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Tab: Target */}
                         {activeTab === 'target' && (
-                            <div className="bg-[#4E342E] p-8 fudge-border shadow-orange text-white">
-                                <h3 className="serif text-2xl font-black italic mb-10 uppercase">Revenue Analytics</h3>
-                                <div className="text-center mb-10">
-                                    <p className="text-[10px] font-black opacity-50 mb-2">PROGRESS</p>
-                                    <div className="text-7xl font-black text-[#FF6D00] serif">{progress.toFixed(0)}%</div>
-                                    <div className="h-4 bg-black/30 w-full mt-6 fudge-border">
-                                        <div className="h-full bg-[#FF6D00] transition-all" style={{width: `${progress}%`}}></div>
+                            <div className="mt-12 animate-fade-in">
+                                <section className="bg-[#4E342E] border-4 border-[#2D241E] p-8 shadow-orange relative mb-24 text-white">
+                                    <div className="absolute -top-4 left-6 bg-[#FF6D00] text-white px-4 py-1.5 text-[11px] font-black uppercase tracking-widest shadow-orange">PERFORMANCE</div>
+                                    <h3 className="text-3xl font-magazine-serif font-black italic border-b-2 border-white/20 inline-block mb-12 uppercase tracking-tighter">Revenue Dashboard</h3>
+                                    
+                                    <div className="mb-16">
+                                        <div className="flex justify-between items-end mb-6">
+                                            <span className="text-[14px] font-black text-white/50 tracking-widest uppercase font-magazine-sans">Rate</span>
+                                            <span className="text-6xl font-magazine-serif font-black text-[#FF6D00]">{progressPercentage.toFixed(0)}%</span>
+                                        </div>
+                                        <div className="h-4 w-full bg-[#2D241E] border border-white/10"><div className="h-full bg-[#FF6D00] transition-all duration-1000" style={{ width: `${progressPercentage}%` }} /></div>
+                                        <div className="grid grid-cols-2 gap-5 mt-10">
+                                            <div className="bg-[#2D241E] p-5 border border-white/10"><p className="text-[9px] font-black text-[#FF6D00] uppercase mb-3">Target</p><input type="number" value={targetGoal} onChange={(e) => setTargetGoal(Number(e.target.value))} className="w-full bg-transparent border-none p-0 text-2xl font-black text-white focus:ring-0" /></div>
+                                            <div className="bg-[#FF6D00] p-5 border-2 border-[#2D241E] shadow-orange"><p className="text-[9px] font-black text-[#2D241E] uppercase mb-3">Total</p><p className="text-2xl font-black">{currentTotalSales.toLocaleString()}</p></div>
+                                        </div>
                                     </div>
-                                </div>
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div className="bg-black/20 p-5">
-                                        <p className="text-[8px] opacity-40">TARGET GOAL</p>
-                                        <input type="number" className="bg-transparent border-none p-0 text-xl font-black serif w-full" value={targetGoal} onChange={(e) => setTargetGoal(Number(e.target.value))} />
+
+                                    {/* Daily Performance Entry */}
+                                    <div className="space-y-6 pt-10 border-t border-white/10">
+                                        <h4 className="text-xl font-magazine-serif font-black italic text-white flex items-center gap-3"><Icon name="arrowTrendingUp" className="w-6 h-6 text-[#FF6D00]" /> DAILY SALES ENTRY</h4>
+                                        {plans.map((p) => (
+                                            <div key={p.id} className="relative group bg-[#2D241E] border border-white/5 p-4 flex gap-5 items-center">
+                                                <div className="relative w-16 h-16 bg-[#FDFCFB] fudge-border-dark flex-shrink-0 flex items-center justify-center overflow-hidden shadow-lg">
+                                                    {p.dailyImageUrl ? <img src={p.dailyImageUrl} className="w-full h-full object-cover" /> : <Icon name="camera" className="w-6 h-6 opacity-10 text-[#2D241E]" />}
+                                                    <label className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center cursor-pointer transition-opacity"><Icon name="plus" className="w-5 h-5 text-white" /><input type="file" className="hidden" onChange={(e) => handleImageUpload(e, 'daily', p.id)} /></label>
+                                                </div>
+                                                <div className="flex-1">
+                                                    <div className="flex justify-between mb-1 text-[10px] text-white/40 font-black uppercase"><span>Day {p.dayNumber}</span><span>{p.date}</span></div>
+                                                    <input type="number" className="w-full bg-transparent border-b-2 border-[#FF6D00] p-0 text-xl font-black text-[#FF6D00] focus:ring-0" value={p.dailySales} onChange={(e) => updatePlan(p.id, 'dailySales', Number(e.target.value))} />
+                                                </div>
+                                            </div>
+                                        ))}
                                     </div>
-                                    <div className="bg-[#FF6D00] p-5 text-[#2D241E]">
-                                        <p className="text-[8px]">TOTAL SALES</p>
-                                        <p className="text-xl font-black serif">${totalSales.toLocaleString()}</p>
+
+                                    {/* Top Sellers */}
+                                    <div className="pt-16 border-t border-white/10">
+                                        <h4 className="text-2xl font-magazine-serif font-black italic mb-10 flex items-center gap-3"><Icon name="trophy" className="w-7 h-7 text-[#FF6D00]"/> BEST SELLERS TOP 3</h4>
+                                        <div className="space-y-8">
+                                            {[0,1,2].map(idx => {
+                                                const p = products[idx] || products[0];
+                                                return (
+                                                    <div key={idx} className="bg-[#2D241E] p-5 border-2 border-white/10 group flex gap-5">
+                                                        <div className="w-20 h-24 bg-white fudge-border-dark overflow-hidden shrink-0">{p?.imageUrl && <img src={p.imageUrl} className="w-full h-full object-cover" />}</div>
+                                                        <div className="flex-1 overflow-hidden">
+                                                            <span className="text-3xl font-magazine-serif font-black text-[#FF6D00] italic leading-none mb-2 block">#{idx+1}</span>
+                                                            <input className="w-full bg-transparent border-none p-0 text-sm font-black text-white uppercase focus:ring-0 truncate" value={p?.name || 'Empty'} onChange={(e) => updateProduct(p.id, 'name', e.target.value)} />
+                                                            <div className="flex items-center gap-2 text-[9px] text-white/30 italic mt-1 truncate"><Icon name="link" className="w-3 h-3" /> {p?.link || 'No URL'}</div>
+                                                        </div>
+                                                    </div>
+                                                )
+                                            })}
+                                        </div>
                                     </div>
-                                </div>
+                                </section>
+                            </div>
+                        )}
+
+                        {activeTab === 'notice' && (
+                            <div className="mt-12 animate-fade-in space-y-12">
+                                <section className="p-8 bg-white border-4 border-[#2D241E] shadow-orange relative">
+                                    <div className="absolute -top-4 left-6 bg-[#FF6D00] text-white px-3 py-1 text-[10px] font-black uppercase">重要資訊</div>
+                                    <div className="space-y-8 text-[12px] font-bold text-[#4E342E] leading-loose">
+                                        <div><p className="text-[#FF6D00] font-black mb-1 uppercase">【 訂購流程 】</p><p className="pl-4 border-l-2 border-[#2D241E]/10">官網下單 → 系統確認入帳即完成。現貨限量售完即止。</p></div>
+                                        <div><p className="text-[#FF6D00] font-black mb-1 uppercase">【 付款與配送 】</p><p className="pl-4 border-l-2 border-[#2D241E]/10">刷卡、轉帳、超付。宅配 $80 / 超商 $65。滿 $2,500 免運。</p></div>
+                                    </div>
+                                </section>
                             </div>
                         )}
                     </main>
 
-                    {/* Navigation */}
-                    <nav className="fixed bottom-8 left-1/2 -translate-x-1/2 w-[92%] max-w-md bg-[#2D241E] border-4 border-[#FF6D00] shadow-orange flex justify-around py-5 z-50">
-                        <button onClick={() => setActiveTab('plan')} className={`text-[10px] font-black uppercase ${activeTab === 'plan' ? 'text-[#FF6D00]' : 'text-white'}`}>Planner</button>
-                        <button onClick={() => setActiveTab('target')} className={`text-[10px] font-black uppercase ${activeTab === 'target' ? 'text-[#FF6D00]' : 'text-white'}`}>Analytics</button>
+                    {/* Footer / Navigation */}
+                    <footer className="mt-20 px-8 text-center pb-24 opacity-30 text-[10px] font-magazine-serif italic uppercase tracking-widest cursor-pointer" onClick={() => { localStorage.removeItem('kiki_auth'); window.location.reload(); }}>Sign Out</footer>
+
+                    <nav className="fixed bottom-8 left-1/2 -translate-x-1/2 w-[92%] max-w-md bg-[#2D241E] border-4 border-[#FF6D00] shadow-orange flex justify-around items-center py-5 z-[100]">
+                        <button onClick={() => setActiveTab('plan')} className={`flex flex-col items-center transition-all ${activeTab === 'plan' ? 'text-[#FF6D00] scale-110' : 'text-white/40'}`}><Icon name="clock" /><span className="text-[9px] font-black uppercase mt-1">Plan</span></button>
+                        <button onClick={() => setActiveTab('notice')} className={`flex flex-col items-center ${activeTab === 'notice' ? 'text-[#FF6D00] scale-110' : 'text-white/40'}`}><Icon name="info" /><span className="text-[9px] font-black uppercase mt-1">Info</span></button>
+                        <button onClick={() => setActiveTab('target')} className="flex flex-col items-center -mt-16 scale-125"><div className="bg-[#FF6D00] p-4 fudge-border-dark shadow-orange border-white active:scale-95 transition-all"><Icon name="chart" className="text-white w-8 h-8" /></div><span className="text-[9px] text-[#FF6D00] font-black uppercase mt-3 tracking-widest">Target</span></button>
+                        <button onClick={() => setActiveTab('items')} className={`flex flex-col items-center ${activeTab === 'items' ? 'text-[#FF6D00] scale-110' : 'text-white/40'}`}><Icon name="bag" /><span className="text-[9px] font-black uppercase mt-1">Catalog</span></button>
                     </nav>
                 </div>
             );
